@@ -10,16 +10,16 @@ type completion_help_type =
     [@@deriving yojson]
 
 type doc_hints = {
-        text: string;
-        hint_type: string;
-    } [@@deriving yojson]
+    text: string;
+    hint_type: string;
+} [@@deriving yojson]
 
 type docs = {
     headline: string;
     text: string;
     usageExample: string;
     hints: doc_hints list;
-    } [@@deriving to_yojson]
+} [@@deriving to_yojson]
 
 type ref_node_data = {
     node_type: node_type;

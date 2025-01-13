@@ -21,16 +21,16 @@ type completion_help_type =
     [@@deriving yojson]
 
 type doc_hints = {
-        text: string;
-        hint_type: string;
-    } [@@deriving yojson]
+    text: string;
+    hint_type: string;
+} [@@deriving yojson]
 
 type docs = {
-        headline: string;
-        text: string;
-        usageExample: string;
-        hints: doc_hints list;
-    } [@@deriving yojson]
+    headline: string;
+    text: string;
+    usageExample: string;
+    hints: doc_hints list;
+} [@@deriving yojson]
 
 type ref_node_data = {
     node_type: node_type;
@@ -188,23 +188,19 @@ let load_docs_hints d c =
 let load_docs_from_xml d x =
     let aux d x =
         match x with
-        | Xml.Element ("headline", _, [Xml.PCData s]) -> 
-            let new_docs = {d.docs with headline = s} in 
+        | Xml.Element ("headline", _, [Xml.PCData s]) ->
+            let new_docs = {d.docs with headline = s} in
             {d with docs = new_docs}
-        | Xml.Element ("text", _, [Xml.PCData s]) -> 
-            let new_docs = {d.docs with text = s} in 
+        | Xml.Element ("text", _, [Xml.PCData s]) ->
+            let new_docs = {d.docs with text = s} in
             {d with docs = new_docs}
-        | Xml.Element ("hints", _, _) -> 
+        | Xml.Element ("hints", _, _) ->
             load_docs_hints d x
-        | Xml.Element ("usageExample", _, [Xml.PCData s]) -> 
-            let new_docs = {d.docs with usageExample = s} in 
+        | Xml.Element ("usageExample", _, [Xml.PCData s]) ->
+            let new_docs = {d.docs with usageExample = s} in
             {d with docs = new_docs}
         | _ -> d  (* Ignore unknown elements instead of raising an error *)
-    in
-    match x with
-    | Xml.Element ("docs", _, children) ->
-        List.fold_left aux d children 
-    | _ -> d
+    in Xml.fold aux d x
 
 let data_from_xml d x =
     let aux d x =
