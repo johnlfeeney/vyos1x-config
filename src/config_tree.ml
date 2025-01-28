@@ -113,6 +113,11 @@ let is_tag node path =
     let data = Vytree.get_data node path in
     data.tag
 
+let is_tag_value node path =
+    match path with
+    | [] | [_] -> false
+    | _ -> is_tag node (Util.drop_last path)
+
 let set_leaf node path leaf =
     let data = Vytree.get_data node path in
     Vytree.update node path {data with leaf=leaf}

@@ -56,3 +56,7 @@ val sort_children : (string -> string -> int) -> 'a t -> 'a t
 val copy : 'a t -> string list -> string list -> 'a t
 
 val move : 'a t -> string list -> position -> 'a t
+
+val is_terminal_path : 'a t -> string list -> bool
+
+val fold_tree_with_path: (string list * 'acc -> 'b t -> string list * 'acc) -> string list * 'acc -> 'b t -> string list * 'acc
