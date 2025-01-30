@@ -262,6 +262,33 @@ let diff_tree path left right =
     let ret = make Config_tree.default_data "" [add_node; sub_node; del_node; int_node] in
     ret
 
+(* convenience function needed for commit algorithm:
+    we need a hybrid tree between the 'del' tree and the 'sub' tree, namely:
+    in case the del tree has a terminal tag node (== all tag values have
+    been removed) add tag node values for proper removal in commit execution
+    *)
+
+let get_tagged_delete_tree dt =
+    let del_tree = Config_tree.get_subtree dt ["del"] in
+    let sub_tree = Config_tree.get_subtree dt ["sub"] in
+    let f (p, a) _t =
+        let q = List.rev p in
+        match q with
+        | [] -> (p, a)
+        | _ ->
+        if Config_tree.is_tag a q && Vytree.is_terminal_path a q then
+            let children = Vytree.children_of_path sub_tree q in
+            let insert_child path node name =
+                Vytree.insert ~position:Lexical node (path @ [name]) Config_tree.default_data
+            in
+            let a' = List.fold_left (insert_child q) a children in
+            (p, a')
+        else
+            (p, a)
+    in
+    snd (Vytree.fold_tree_with_path f ([], del_tree) del_tree)
+
+
 (* the following builds a diff_func to return a unified diff string of
    configs or config commands
  *)
