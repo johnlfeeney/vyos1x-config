@@ -110,3 +110,52 @@ let list_of_path p =
     | [h] -> Pcre.split ~pat:"\\s+" h
     | h :: h' :: _ -> (Pcre.split ~pat:"\\s+" h) @ [h']
     | _ -> []
+
+
+let drop_last l =
+    let rec aux acc l =
+        match l with
+        | [] | [_] -> List.rev acc
+        | hd :: tl ->
+            let acc' = hd :: acc in
+            aux acc' tl
+    in
+    aux [] l
+
+let drop_last_n l n =
+    let rec aux k l =
+        match l with
+        | [] -> []
+        | _ -> if k <= 0 then l else aux (k - 1) (drop_last l)
+    in aux n l
+
+let drop_first l =
+    match l with
+    | [] -> []
+    | _ :: tl -> tl
+
+let rec get_last l =
+    match l with
+    | [] -> None
+    | h :: [] -> Some h
+    | _ :: tl -> get_last tl
+
+let get_last_n l n =
+    get_last (drop_last_n l n)
+
+let lex_order l k =
+    let c = compare (get_last l) (get_last k) in
+    match c with
+    | 0 -> compare (drop_last l) (drop_last k)
+    | _ as r -> r
+
+let colex_order l k =
+    let rec comp x y =
+        let c = compare (get_last x) (get_last y) in
+        match c with
+        | 0 -> comp (drop_last x) (drop_last y)
+        | _ as r -> r
+    in comp l k
+
+let is_empty l =
+    List.compare_length_with l 0 = 0

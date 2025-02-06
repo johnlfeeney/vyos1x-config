@@ -480,6 +480,10 @@ let get_owner reftree path =
     let data = Vytree.get_data reftree path in
     data.owner
 
+let get_priority reftree path =
+    let data = Vytree.get_data reftree path in
+    data.priority
+
 let get_help_string reftree path =
     let data = Vytree.get_data reftree path in
     data.help
@@ -504,6 +508,21 @@ let refpath reftree path =
                           else aux (acc @ [h]) ([h'] @ tl)
     | _, [] -> acc
     in aux [] path
+
+let get_ceil_data f reftree path =
+    let data_of_path d p =
+        let data = Vytree.get_data reftree p in
+        match (f data) with
+        | Some d' -> Some d'
+        | None -> d
+    in
+    let rec aux d acc p =
+        match acc, p with
+        | _, h :: tl ->
+                let acc' = acc @ [h] in
+                aux (data_of_path d (refpath reftree acc')) acc' tl
+        | _, [] -> d
+    in aux None [] path
 
 module JSONRenderer =
 struct

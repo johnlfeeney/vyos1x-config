@@ -181,8 +181,6 @@ let clone ?(recurse=true) ?(set_values=None) old_root new_root path =
             let path_remaining = Vylist.complement path path_existing in
             clone_path ~recurse:recurse ~set_values:set_values old_root new_root path_existing path_remaining
 
-let is_empty l = (l = [])
-
 (* define the diff_func *)
 let decorate_trees ?(recurse=true) (path : string list) (Diff_tree res) (m : change) =
     match m with
@@ -205,14 +203,14 @@ let decorate_trees ?(recurse=true) (path : string list) (Diff_tree res) (m : cha
                       let add_vals = ValueS.elements (ValueS.diff v_set ov_set) in
                       let inter_vals = ValueS.elements (ValueS.inter ov_set v_set) in
                       let sub_tree =
-                          if not (is_empty sub_vals) then
+                          if not (Util.is_empty sub_vals) then
                               clone ~set_values:(Some sub_vals) res.left res.sub path
                           else
                               res.sub
                       in
                       let del_tree =
-                          if not (is_empty sub_vals) then
-                              if (is_empty add_vals) && (is_empty inter_vals) then
+                          if not (Util.is_empty sub_vals) then
+                              if (Util.is_empty add_vals) && (Util.is_empty inter_vals) then
                                   (* delete whole node, not just values *)
                                   clone ~set_values:(Some []) res.left res.del path
                               else
@@ -221,13 +219,13 @@ let decorate_trees ?(recurse=true) (path : string list) (Diff_tree res) (m : cha
                               res.del
                       in
                       let add_tree =
-                          if not (is_empty add_vals) then
+                          if not (Util.is_empty add_vals) then
                             clone ~set_values:(Some add_vals) res.right res.add path
                           else
                               res.add
                       in
                       let inter_tree =
-                          if not (is_empty inter_vals) then
+                          if not (Util.is_empty inter_vals) then
                               clone ~set_values:(Some inter_vals) res.left res.inter path
                           else
                               res.inter
@@ -263,6 +261,33 @@ let diff_tree path left right =
     let int_node = make Config_tree.default_data "inter" (children_of (trees.inter)) in
     let ret = make Config_tree.default_data "" [add_node; sub_node; del_node; int_node] in
     ret
+
+(* convenience function needed for commit algorithm:
+    we need a hybrid tree between the 'del' tree and the 'sub' tree, namely:
+    in case the del tree has a terminal tag node (== all tag values have
+    been removed) add tag node values for proper removal in commit execution
+    *)
+
+let get_tagged_delete_tree dt =
+    let del_tree = Config_tree.get_subtree dt ["del"] in
+    let sub_tree = Config_tree.get_subtree dt ["sub"] in
+    let f (p, a) _t =
+        let q = List.rev p in
+        match q with
+        | [] -> (p, a)
+        | _ ->
+        if Config_tree.is_tag a q && Vytree.is_terminal_path a q then
+            let children = Vytree.children_of_path sub_tree q in
+            let insert_child path node name =
+                Vytree.insert ~position:Lexical node (path @ [name]) Config_tree.default_data
+            in
+            let a' = List.fold_left (insert_child q) a children in
+            (p, a')
+        else
+            (p, a)
+    in
+    snd (Vytree.fold_tree_with_path f ([], del_tree) del_tree)
+
 
 (* the following builds a diff_func to return a unified diff string of
    configs or config commands
@@ -340,14 +365,14 @@ let unified_diff ?(cmds=false) ?recurse:_ (path : string list) (Diff_string res)
                       let sub_vals = ValueS.elements (ValueS.diff ov_set v_set) in
                       let add_vals = ValueS.elements (ValueS.diff v_set ov_set) in
                       let str_diff =
-                          if not (is_empty sub_vals) then
+                          if not (Util.is_empty sub_vals) then
                               let sub_tree =
                                   clone ~set_values:(Some sub_vals) res.left res.skel path
                               in str_diff ^ (removed_lines ~cmds:cmds sub_tree path)
                           else str_diff
                       in
                       let str_diff =
-                          if not (is_empty add_vals) then
+                          if not (Util.is_empty add_vals) then
                               let add_tree =
                                   clone ~set_values:(Some add_vals) res.right res.skel path
                               in str_diff ^ (added_lines ~cmds:cmds add_tree path)
@@ -398,14 +423,6 @@ let show_diff ?(cmds=false) path left right =
         in
         strs
 
-let is_terminal_path node path =
-    try
-        let n = Vytree.get node path in
-        match (Vytree.children_of_node n) with
-        | [] -> true
-        | _ -> false
-    with Vytree.Nonexistent_path -> false
-
 (* mask function; mask applied on right *)
 let mask_func ?recurse:_ (path : string list) (Diff_tree res) (m : change) =
     match m with
@@ -413,7 +430,7 @@ let mask_func ?recurse:_ (path : string list) (Diff_tree res) (m : change) =
     | Subtracted ->
             (match path with
             | [_] -> Diff_tree {res with left = Vytree.delete res.left path}
-            |  _  -> if not (is_terminal_path res.right (list_but_last path)) then
+            |  _  -> if not (Vytree.is_terminal_path res.right (list_but_last path)) then
                          Diff_tree {res with left = Vytree.delete res.left path}
                      else Diff_tree (res))
     | Unchanged -> Diff_tree (res)

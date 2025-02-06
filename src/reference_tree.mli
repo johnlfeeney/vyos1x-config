@@ -71,6 +71,8 @@ val is_valueless : t -> string list -> bool
 
 val get_owner : t -> string list -> string option
 
+val get_priority : t -> string list -> string option
+
 val get_help_string : t -> string list -> string
 
 val get_value_help : t -> string list -> (string * string) list
@@ -78,5 +80,7 @@ val get_value_help : t -> string list -> (string * string) list
 val get_completion_data : t -> string list -> (node_type * bool * string) list
 
 val refpath : t -> string list -> string list
+
+val get_ceil_data : (ref_node_data -> string option) -> t -> string list -> string option
 
 val render_json : t -> string

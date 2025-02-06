@@ -15,3 +15,19 @@ val string_of_list : string list -> string
 val json_of_list : string list -> string
 
 val list_of_path : string -> string list
+
+val drop_last : 'a list -> 'a list
+
+val drop_last_n : 'a list -> int -> 'a list
+
+val drop_first : 'a list -> 'a list
+
+val get_last : 'a list -> 'a option
+
+val get_last_n : 'a list -> int -> 'a option
+
+val lex_order : string list -> string list -> int
+
+val colex_order : string list -> string list -> int
+
+val is_empty : 'a list -> bool

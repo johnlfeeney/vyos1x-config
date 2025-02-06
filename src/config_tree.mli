@@ -39,6 +39,8 @@ val set_tag : t -> string list -> bool -> t
 
 val is_tag : t -> string list -> bool
 
+val is_tag_value : t -> string list -> bool
+
 val set_leaf : t -> string list -> bool -> t
 
 val is_leaf : t -> string list -> bool
